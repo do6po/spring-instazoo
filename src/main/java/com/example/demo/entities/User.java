@@ -4,6 +4,7 @@ import com.example.demo.entities.enums.ERole;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -11,7 +12,7 @@ import java.util.*;
 
 @Data
 @Entity(name = User.TABLE)
-public class User {
+public class User implements UserDetails {
     public static final String TABLE = "users";
 
     @Id
@@ -38,7 +39,7 @@ public class User {
 
     @ElementCollection(targetClass = ERole.class)
     @CollectionTable(name = "user_role",
-            joinColumns = @JoinColumn(name="user_id"))
+            joinColumns = @JoinColumn(name = "user_id"))
     private Set<ERole> roles = new HashSet<>();
 
     @OneToMany(
@@ -59,9 +60,47 @@ public class User {
     public User() {
     }
 
+    public User(
+            Long id,
+            String username,
+            String email,
+            String password,
+            Collection<? extends GrantedAuthority> authorities
+    ) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.authorities = authorities;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }
