@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+
+  db:
+    image: mysql:8.0.22
+    container_name: ${APP_NAME}_db
+    ports:
+      - ${DOCKER_GATEWAY}:${DB_PORT}:${DB_PORT}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+    volumes:
+      - ./docker/mysql/:/var/lib/mysql/
+
+  db_testing:
+    image: mysql:8.0.22
+    container_name: ${APP_NAME}_db_testing
+    ports:
+      - ${DOCKER_GATEWAY}:3307:${DB_PORT}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+    tmpfs:
+      - /var/lib/mysql
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DOCKER_NETWORK}
