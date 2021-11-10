@@ -1,5 +1,5 @@
 package com.example.demo.security;
 
 public class SecurityConstants {
-    public static final String CONTENT_TYPE_JSON = "";
+    public static final String SIGN_UP_URLS = "/api/auth/**";
 }
