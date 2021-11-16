@@ -41,25 +41,28 @@ public class AuthController {
         this.userService = userService;
     }
 
-    @PostMapping("/api/signup")
+    @PostMapping("/register")
     public ResponseEntity<Object> register(
             @Valid @RequestBody SignupRequest request,
             BindingResult result
     ) {
         var errors = responseErrorValidation.mapValidationService(result);
-        if (ObjectUtils.isEmpty(errors)) {
+        if (!ObjectUtils.isEmpty(errors)) {
             return errors;
         }
 
-        userService.create(request);
+        userService.createUser(request);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully"));
     }
 
-    @PostMapping("/api/login")
-    public ResponseEntity<Object> auth(@Valid @RequestBody LoginRequest request, BindingResult result) {
+    @PostMapping("/login")
+    public ResponseEntity<Object> auth(
+            @Valid @RequestBody LoginRequest request,
+            BindingResult result
+    ) {
         var errors = responseErrorValidation.mapValidationService(result);
-        if (ObjectUtils.isEmpty(errors)) {
+        if (!ObjectUtils.isEmpty(errors)) {
             return errors;
         }
 

@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findAllByUserOrderByCreatedAtDesc(User user);
 
-    List<Post> findAllOrderByCreatedAtDesc();
+    List<Post> findAllByOrderByCreatedAtDesc();
 
     Optional<Post> findPostByIdAndUser(Long id, User user);
 }
