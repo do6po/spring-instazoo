@@ -4,22 +4,18 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @Entity
 public class Post {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
     private String caption;
     private String location;
-    private Integer likes;
+    private Integer likes = 0;
 
     @Column
     @ElementCollection(targetClass = String.class)
@@ -44,4 +40,22 @@ public class Post {
         createdAt = LocalDateTime.now();
     }
 
+    public Post like(String username) {
+        Optional<String> userLiked = this.getLinkedUsers()
+                .stream()
+                .filter(u -> u.equals(username))
+                .findAny();
+
+        if (userLiked.isPresent()) {
+            this.setLikes(this.getLikes() - 1);
+            this.getLinkedUsers().remove(username);
+
+            return this;
+        }
+
+        this.setLikes(this.getLikes() + 1);
+        this.getLinkedUsers().add(username);
+
+        return this;
+    }
 }
