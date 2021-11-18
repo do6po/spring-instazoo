@@ -1,5 +1,6 @@
 package com.example.demo.web;
 
+import com.example.demo.entities.User;
 import com.example.demo.payload.requests.LoginRequest;
 import com.example.demo.payload.requests.SignupRequest;
 import com.example.demo.payload.response.JWTTokenResponse;

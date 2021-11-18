@@ -46,7 +46,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
             User userDetails = customerUserDetailsService.loadUserById(userId);
 
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+            var authenticationToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
                     null,
                     Collections.emptyList()
