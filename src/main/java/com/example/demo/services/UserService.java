@@ -60,4 +60,8 @@ public class UserService implements PrincipalToUserTrait, LogHelperTrait {
 
         return userRepository.save(user);
     }
+
+    public User getUserById(Long userId) {
+        return userRepository.getByIdOrElseThrow(userId);
+    }
 }
