@@ -6,19 +6,18 @@ import com.example.demo.entities.enums.ERole;
 import com.example.demo.exceptions.UserExistsException;
 import com.example.demo.payload.requests.SignupRequest;
 import com.example.demo.repositories.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.demo.traits.LogHelperTrait;
+import com.example.demo.traits.PrincipalToUserTrait;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 
 @Service
-public class UserService {
-    public static final Logger LOG = LoggerFactory.getLogger(UserService.class);
-
+public class UserService implements PrincipalToUserTrait, LogHelperTrait {
+    @Getter
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -41,18 +40,18 @@ public class UserService {
         user.getRoles().add(ERole.ROLE_USER);
 
         try {
-            LOG.info("Saving User {}", userIn.getEmail());
+            logger().info("Saving User {}", userIn.getEmail());
 
             return userRepository.save(user);
         } catch (Throwable t) {
-            LOG.error("Error during registration. {}", t.getMessage());
+            logger().error("Error during registration. {}", t.getMessage());
 
             throw new UserExistsException(String.format("The user %s already exists!", user.getEmail()));
         }
     }
 
     public User updateUser(UserDTO dto, Principal principal) {
-        var user = getUserFromPrincipal(principal);
+        var user = getUserByPrincipal(principal);
 
         user.setName(dto.getFirstname());
         user.setLastname(dto.getLastname());
@@ -60,21 +59,5 @@ public class UserService {
         user.setBio(dto.getBio());
 
         return userRepository.save(user);
-    }
-
-    public User getCurrentUser(Principal principal) {
-        return getUserFromPrincipal(principal);
-    }
-
-    public User getUserFromPrincipal(Principal principal) {
-        String username = principal.getName();
-
-        return userRepository
-                .findByUsername(username)
-                .orElseThrow(
-                        () -> new UsernameNotFoundException(
-                                String.format("User with username %s - not found!", username)
-                        )
-                );
     }
 }

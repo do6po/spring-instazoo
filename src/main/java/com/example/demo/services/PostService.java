@@ -7,8 +7,9 @@ import com.example.demo.exceptions.PostNotFoundException;
 import com.example.demo.repositories.ImageRepository;
 import com.example.demo.repositories.PostRepository;
 import com.example.demo.repositories.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.demo.traits.LogHelperTrait;
+import com.example.demo.traits.PrincipalToUserTrait;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
@@ -17,27 +18,28 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 @Service
-public class PostService {
-    public static final Logger LOG = LoggerFactory.getLogger(PostService.class);
-
+public class PostService
+        implements
+        LogHelperTrait,
+        PrincipalToUserTrait {
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
     private final ImageRepository imageRepository;
-    private final UserService userService;
+
+    @Getter
+    private final UserRepository userRepository;
 
     public PostService(
             PostRepository postRepository,
-            UserRepository userRepository,
             ImageRepository imageRepository,
-            UserService userService) {
+            UserRepository userRepository
+    ) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
         this.imageRepository = imageRepository;
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     public Post createPost(PostDTO dto, Principal principal) {
-        var user = userService.getUserFromPrincipal(principal);
+        var user = getUserByPrincipal(principal);
         var post = new Post();
 
         post.setUser(user);
@@ -45,7 +47,7 @@ public class PostService {
         post.setLocation(dto.getLocation());
         post.setTitle(dto.getTitle());
 
-        LOG.info("Saving post for User: {}", user.getEmail());
+        logger().info("Saving post for User: {}", user.getEmail());
 
         return postRepository.save(post);
     }
@@ -55,7 +57,7 @@ public class PostService {
     }
 
     public List<Post> getAllPostForUser(Principal principal) {
-        var user = userService.getUserFromPrincipal(principal);
+        var user = getUserByPrincipal(principal);
 
         return postRepository.findAllByUserOrderByCreatedAtDesc(user);
     }
@@ -70,7 +72,7 @@ public class PostService {
     }
 
     public Post getPostById(Long id, Principal principal) {
-        var user = userService.getUserFromPrincipal(principal);
+        var user = getUserByPrincipal(principal);
 
         return postRepository
                 .findPostByIdAndUser(id, user)

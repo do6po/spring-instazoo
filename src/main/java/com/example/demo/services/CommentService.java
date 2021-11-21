@@ -3,7 +3,7 @@ package com.example.demo.services;
 import com.example.demo.dto.CommentDTO;
 import com.example.demo.entities.Comment;
 import com.example.demo.repositories.CommentRepository;
-import com.example.demo.repositories.ConcretePostRepository;
+import com.example.demo.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +14,13 @@ import java.util.Optional;
 @Service
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final ConcretePostRepository postRepository;
+    private final PostRepository postRepository;
     private final UserService userService;
 
     @Autowired
     public CommentService(
             CommentRepository commentRepository,
-            ConcretePostRepository postRepository,
+            PostRepository postRepository,
             UserService userService
     ) {
         this.commentRepository = commentRepository;
@@ -29,8 +29,8 @@ public class CommentService {
     }
 
     public Comment save(Long id, CommentDTO dto, Principal principal) {
-        var user = userService.getUserFromPrincipal(principal);
-        var post = postRepository.findByIdOrThrow(id);
+        var user = userService.getUserByPrincipal(principal);
+        var post = postRepository.findByIdOrElseThrow(id);
 
         var comment = new Comment();
         comment.setPost(post);
@@ -42,7 +42,7 @@ public class CommentService {
     }
 
     public List<Comment> getAllCommentsForPost(Long id) {
-        var post = postRepository.findByIdOrThrow(id);
+        var post = postRepository.findByIdOrElseThrow(id);
 
         return post.getComments();
     }

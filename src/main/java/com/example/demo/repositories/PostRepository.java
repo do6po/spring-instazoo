@@ -2,6 +2,7 @@ package com.example.demo.repositories;
 
 import com.example.demo.entities.Post;
 import com.example.demo.entities.User;
+import com.example.demo.exceptions.PostNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Optional<Post> findPostByIdAndUser(Long id, User user);
 
     Page<Post> findPostsByIdAndUser(Long id, User user);
+
+    default Post findByIdOrElseThrow(Long id) {
+        return findById(id).orElseThrow(() -> new PostNotFoundException("Post not found!"));
+    }
 }

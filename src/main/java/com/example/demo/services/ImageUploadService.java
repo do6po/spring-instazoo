@@ -1,36 +1,105 @@
 package com.example.demo.services;
 
-import com.example.demo.repositories.ConcretePostRepository;
+import com.example.demo.entities.ImageModel;
+import com.example.demo.exceptions.ImageNotFoundException;
 import com.example.demo.repositories.ImageRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.demo.repositories.PostRepository;
+import com.example.demo.repositories.UserRepository;
+import com.example.demo.traits.LogHelperTrait;
+import com.example.demo.traits.PrincipalToUserTrait;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.Principal;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 @Service
-public class ImageUploadService {
-    public static final Logger LOG = LoggerFactory.getLogger(ImageUploadService.class);
+public class ImageUploadService
+        implements
+        LogHelperTrait,
+        PrincipalToUserTrait {
 
     private final ImageRepository imageRepository;
-    private final UserService userService;
-    private final ConcretePostRepository postRepository;
+    private final PostRepository postRepository;
+
+    @Getter
+    private final UserRepository userRepository;
 
     public ImageUploadService(
             ImageRepository imageRepository,
-            UserService userService,
-            ConcretePostRepository postRepository
+            PostRepository postRepository,
+            UserRepository userRepository
     ) {
         this.imageRepository = imageRepository;
-        this.userService = userService;
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
     }
 
-    private static byte[] decompressBytes(byte[] data) {
+    public ImageModel uploadImageToUser(MultipartFile file, Principal principal) throws IOException {
+        var user = getUserByPrincipal(principal);
+        logger().info("Uploading image profile to User {}", user.getUsername());
+
+        var image = imageRepository.findByUserId(user.getId()).orElse(null);
+
+        if (!ObjectUtils.isEmpty(image)) {
+            imageRepository.delete(image);
+        }
+
+        var imageModel = new ImageModel();
+        imageModel.setUserId(user.getId());
+        imageModel.setImageBytes(compressBytes(file.getBytes()));
+        imageModel.setName(file.getOriginalFilename());
+
+        return imageRepository.save(imageModel);
+    }
+
+    public ImageModel uploadImageToPost(MultipartFile file, Principal principal, Long postId) throws IOException {
+        var user = getUserByPrincipal(principal);
+        var post = user.getPosts()
+                .stream()
+                .filter(p -> p.getId().equals(postId))
+                .collect(toStringPostCollector());
+
+        var imageModel = new ImageModel();
+        imageModel.setPostId(post.getId());
+        imageModel.setImageBytes(compressBytes(file.getBytes()));
+        imageModel.setName(file.getName());
+
+        logger().info("Uploading image to Post {}", post.getId());
+
+        return imageRepository.save(imageModel);
+    }
+
+    public ImageModel getImageToPost(Long postId) {
+        ImageModel imageModel = imageRepository.findByPostId(postId)
+                .orElseThrow(() -> new ImageNotFoundException("Cannot find image to post"));
+
+        if (!ObjectUtils.isEmpty(imageModel)) {
+            imageModel.setImageBytes(decompressBytes(imageModel.getImageBytes()));
+        }
+
+        return imageModel;
+    }
+
+    public ImageModel getImageToUser(Principal principal) {
+        var user = getUserByPrincipal(principal);
+
+        var imageModel = imageRepository.findByUserId(user.getId()).orElse(null);
+        if (!ObjectUtils.isEmpty(imageModel)) {
+            imageModel.setImageBytes(decompressBytes(imageModel.getImageBytes()));
+        }
+
+        return imageModel;
+    }
+
+    private byte[] decompressBytes(byte[] data) {
         Inflater inflater = new Inflater();
         inflater.setInput(data);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
@@ -43,7 +112,7 @@ public class ImageUploadService {
 
             outputStream.close();
         } catch (Throwable e) {
-            LOG.error("Cannot decompress Bytes");
+            logger().error("Cannot decompress Bytes");
         }
 
         return outputStream.toByteArray();
@@ -65,7 +134,7 @@ public class ImageUploadService {
         try {
             outputStream.close();
         } catch (Throwable e) {
-            LOG.error("Cannot compress Bytes");
+            logger().error("Cannot compress Bytes");
         }
 
         byte[] bytes = outputStream.toByteArray();
@@ -74,7 +143,7 @@ public class ImageUploadService {
         return bytes;
     }
 
-    public <T> Collector<T, ?, T> toStringPostCollection() {
+    public <T> Collector<T, ?, T> toStringPostCollector() {
         return Collectors.collectingAndThen(
                 Collectors.toList(),
                 list -> {
