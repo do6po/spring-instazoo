@@ -4,6 +4,9 @@ import com.example.demo.dto.CommentDTO;
 import com.example.demo.entities.Comment;
 import com.example.demo.repositories.CommentRepository;
 import com.example.demo.repositories.PostRepository;
+import com.example.demo.repositories.UserRepository;
+import com.example.demo.traits.PrincipalToUserTrait;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,24 +15,26 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class CommentService {
+public class CommentService implements PrincipalToUserTrait {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final UserService userService;
+
+    @Getter
+    private final UserRepository userRepository;
 
     @Autowired
     public CommentService(
             CommentRepository commentRepository,
             PostRepository postRepository,
-            UserService userService
+            UserRepository userRepository
     ) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     public Comment save(Long id, CommentDTO dto, Principal principal) {
-        var user = userService.getUserByPrincipal(principal);
+        var user = getUserByPrincipal(principal);
         var post = postRepository.findByIdOrElseThrow(id);
 
         var comment = new Comment();

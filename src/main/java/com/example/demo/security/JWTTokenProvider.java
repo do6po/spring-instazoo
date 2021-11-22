@@ -1,9 +1,8 @@
 package com.example.demo.security;
 
 import com.example.demo.entities.User;
+import com.example.demo.traits.LogHelperTrait;
 import io.jsonwebtoken.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
@@ -14,11 +13,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class JWTTokenProvider {
-    public Logger logger = LoggerFactory.getLogger(JWTTokenProvider.class);
+public class JWTTokenProvider implements LogHelperTrait {
+    private final Environment env;
 
     @Autowired
-    private Environment env;
+    public JWTTokenProvider(Environment env) {
+        this.env = env;
+    }
 
     public String generateToken(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
@@ -38,14 +39,14 @@ public class JWTTokenProvider {
                 .addClaims(claimsMap)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS512, env.getProperty("app.jwt.secret"))
+                .signWith(SignatureAlgorithm.HS512, getJWTSecret())
                 .compact();
     }
 
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .setSigningKey("Secret")
+                    .setSigningKey(getJWTSecret())
                     .parseClaimsJws(token);
 
             return true;
@@ -54,7 +55,7 @@ public class JWTTokenProvider {
                 | ExpiredJwtException
                 | UnsupportedJwtException
                 | IllegalArgumentException e) {
-            logger.error(e.getMessage());
+            logger().error(e.getMessage());
 
             return false;
         }
@@ -62,10 +63,14 @@ public class JWTTokenProvider {
 
     public Long getUserIdFromToken(String token) {
         Claims claims = Jwts.parser()
-                .setSigningKey("Secret")
+                .setSigningKey(getJWTSecret())
                 .parseClaimsJws(token)
                 .getBody();
 
-        return Long.parseLong(claims.getId());
+        return Long.parseLong((String) claims.get("id"));
+    }
+
+    private String getJWTSecret() {
+        return env.getRequiredProperty("app.jwt.secret");
     }
 }

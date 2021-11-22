@@ -4,7 +4,7 @@ import com.example.demo.dto.UserDTO;
 import com.example.demo.facades.UserFacade;
 import com.example.demo.services.UserService;
 import com.example.demo.validators.ResponseErrorValidation;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.validation.BindingResult;
@@ -16,11 +16,12 @@ import java.security.Principal;
 @RestController
 @RequestMapping("api/user")
 @CrossOrigin
-public class UserController {
+public class UserController extends BaseController {
     private final UserService userService;
     private final UserFacade userFacade;
     private final ResponseErrorValidation responseErrorValidation;
 
+    @Autowired
     public UserController(
             UserService userService,
             UserFacade userFacade,
@@ -32,27 +33,25 @@ public class UserController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<UserDTO> getCurrentUser(Principal principal) {
+    public ResponseEntity<Object> getCurrentUser(Principal principal) {
         var user = userService.getUserByPrincipal(principal);
 
-        return new ResponseEntity<>(
-                userFacade.userToUserDTO(user),
-                HttpStatus.OK
-        );
+        return response(userFacade.userToUserDTO(user));
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDTO> getUserProfile(@PathVariable("userId") String userId) {
+    public ResponseEntity<Object> getUserProfile(@PathVariable("userId") String userId) {
         var user = userService.getUserById(Long.parseLong(userId));
 
-        return new ResponseEntity<>(
-                userFacade.userToUserDTO(user),
-                HttpStatus.OK
-        );
+        return response(userFacade.userToUserDTO(user));
     }
 
     @PostMapping("/update")
-    public ResponseEntity<Object> updateUser(@Valid @RequestBody UserDTO dto, BindingResult result, Principal principal) {
+    public ResponseEntity<Object> updateUser(
+            @Valid @RequestBody UserDTO dto,
+            BindingResult result,
+            Principal principal
+    ) {
         ResponseEntity<Object> error = responseErrorValidation.mapValidationService(result);
 
         if (!ObjectUtils.isEmpty(error)) {
@@ -61,9 +60,6 @@ public class UserController {
 
         var updatedUser = userService.updateUser(dto, principal);
 
-        return new ResponseEntity<>(
-                userFacade.userToUserDTO(updatedUser),
-                HttpStatus.OK
-        );
+        return response(userFacade.userToUserDTO(updatedUser));
     }
 }

@@ -63,7 +63,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     private String getJWTFromRequest(HttpServletRequest request) throws Exception {
         String bearerToken = request.getHeader(env.getProperty("app.jwt.header-token-name"));
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(env.getProperty("app.jwt.header-token-word"))) {
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(env.getRequiredProperty("app.jwt.header-token-word"))) {
             return bearerToken.replace("Bearer ", "");
         }
 
